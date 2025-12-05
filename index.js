@@ -27,7 +27,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Database Connection
-// ✅ CORRECT URI
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${encodeURIComponent(process.env.DB_PASS)}@cluster0.j4ayfzt.mongodb.net/?appName=Cluster0`;
 const client = new MongoClient(uri, {
     serverApi: {
