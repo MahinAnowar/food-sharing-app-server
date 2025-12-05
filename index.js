@@ -9,6 +9,12 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // Middleware
+const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+};
+
 app.use(cors({
     origin: [
         'http://localhost:5173',
@@ -21,7 +27,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Database Connection
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.swu9d.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`; // Use your actual cluster string from Mongo Atlas
+const uri = `mongodb+srv://${process.env.DB_USER}:${encodeURIComponent(process.env.DB_PASS)}@cluster0.swu9d.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`; // Use your actual cluster string from Mongo Atlas
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -45,7 +51,7 @@ async function run() {
     try {
         // Connect the client
         // await client.connect(); // Optional in Vercel usually, but good for local
-        
+
         const db = client.db('food-sharing-db');
         const foodsCollection = db.collection('foods');
         const requestCollection = db.collection('food-requests');
@@ -54,19 +60,11 @@ async function run() {
         app.post('/jwt', async (req, res) => {
             const user = req.body;
             const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '10h' });
-            res.cookie('token', token, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
-            }).send({ success: true });
+            res.cookie('token', token, cookieOptions).send({ success: true });
         });
 
         app.post('/logout', (req, res) => {
-            res.clearCookie('token', {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
-            }).send({ success: true });
+            res.clearCookie('token', { ...cookieOptions, maxAge: 0 }).send({ success: true });
         });
 
         // --- FOOD ROUTES ---
@@ -75,8 +73,13 @@ async function run() {
         app.post('/add-food', verifyToken, async (req, res) => {
             const newFood = req.body;
             newFood.status = 'available'; // Default status
-            const result = await foodsCollection.insertOne(newFood);
-            res.send(result);
+            try {
+                const result = await foodsCollection.insertOne(newFood);
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ message: error.message });
+            }
         });
 
         // 2. Get All Available Foods (Matches your frontend logs /all-foods)
@@ -172,7 +175,7 @@ async function run() {
         app.get('/my-requests/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
             if (req.user.email !== email) return res.status(403).send({ message: 'forbidden access' });
-            
+
             const query = { userEmail: email };
             const result = await requestCollection.find(query).toArray();
             res.send(result);
