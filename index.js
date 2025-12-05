@@ -19,7 +19,8 @@ app.use(cors({
     origin: [
         'http://localhost:5173',
         'https://food-sharing-app-60489.web.app',
-        'https://food-sharing-app-60489.firebaseapp.com'
+        'https://food-sharing-app-60489.firebaseapp.com',
+        'https://food-sharing-app-puce.vercel.app'
     ],
     credentials: true
 }));
