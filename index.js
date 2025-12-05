@@ -27,7 +27,8 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Database Connection
-const uri = `mongodb+srv://${process.env.DB_USER}:${encodeURIComponent(process.env.DB_PASS)}@cluster0.swu9d.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`; // Use your actual cluster string from Mongo Atlas
+// ✅ CORRECT URI
+const uri = `mongodb+srv://${process.env.DB_USER}:${encodeURIComponent(process.env.DB_PASS)}@cluster0.j4ayfzt.mongodb.net/?appName=Cluster0`;
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
